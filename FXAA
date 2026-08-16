@@ -1,0 +1,43 @@
+using System;
+using UnityEngine;
+
+// Token: 0x02000028 RID: 40
+[ExecuteInEditMode]
+[RequireComponent(typeof(Camera))]
+[AddComponentMenu("Image Effects/FXAA")]
+public class FXAA : FXAAPostEffectsBase
+{
+	// Token: 0x060003C8 RID: 968 RVA: 0x000279E9 File Offset: 0x00025BE9
+	private void CreateMaterials()
+	{
+		if (this.mat == null)
+		{
+			this.mat = base.CheckShaderAndCreateMaterial(this.shader, this.mat);
+		}
+	}
+
+	// Token: 0x060003C9 RID: 969 RVA: 0x00027A11 File Offset: 0x00025C11
+	private void Start()
+	{
+		this.shader = Shader.Find("Hidden/FXAA3");
+		this.CreateMaterials();
+		base.CheckSupport(false);
+	}
+
+	// Token: 0x060003CA RID: 970 RVA: 0x00027A34 File Offset: 0x00025C34
+	public void OnRenderImage(RenderTexture source, RenderTexture destination)
+	{
+		this.CreateMaterials();
+		float num = 1f / (float)Screen.width;
+		float num2 = 1f / (float)Screen.height;
+		this.mat.SetVector("_rcpFrame", new Vector4(num, num2, 0f, 0f));
+		this.mat.SetVector("_rcpFrameOpt", new Vector4(num * 2f, num2 * 2f, num * 0.5f, num2 * 0.5f));
+		Graphics.Blit(source, destination, this.mat);
+	}
+
+	// Token: 0x0400035A RID: 858
+	public Shader shader;
+
+	// Token: 0x0400035B RID: 859
+	private Material mat;
+}
