@@ -1,0 +1,50 @@
+using System;
+using UnityEngine;
+
+// Token: 0x02000023 RID: 35
+public class FlagAnimation : MonoBehaviour
+{
+	// Token: 0x060003AE RID: 942 RVA: 0x0002672F File Offset: 0x0002492F
+	private void Start()
+	{
+		this.anim = base.GetComponent<Animator>();
+	}
+
+	// Token: 0x060003AF RID: 943 RVA: 0x00026740 File Offset: 0x00024940
+	private void LateUpdate()
+	{
+		for (int i = this.flags.Length - 1; i >= 0; i--)
+		{
+			if (this.flags[i] > -1 && MainManager.instance.flags[this.flags[i]])
+			{
+				if (this.id != i)
+				{
+					this.anim.Play(this.anims[i]);
+				}
+				this.id = i;
+				this.found = true;
+				break;
+			}
+		}
+		if (!this.found && this.id > -2)
+		{
+			this.anim.Play(this.anims[0]);
+			this.id = -2;
+		}
+	}
+
+	// Token: 0x04000315 RID: 789
+	public int[] flags;
+
+	// Token: 0x04000316 RID: 790
+	public string[] anims;
+
+	// Token: 0x04000317 RID: 791
+	private Animator anim;
+
+	// Token: 0x04000318 RID: 792
+	private int id = -2;
+
+	// Token: 0x04000319 RID: 793
+	private bool found;
+}
