@@ -1,0 +1,50 @@
+using System;
+using UnityEngine;
+
+// Token: 0x02000059 RID: 89
+public class StealthCheck : MonoBehaviour
+{
+	// Token: 0x06000793 RID: 1939 RVA: 0x00069498 File Offset: 0x00067698
+	private void Start()
+	{
+		this.s = base.gameObject.AddComponent<SphereCollider>();
+		this.s.radius = 1.5f;
+		this.b = base.gameObject.AddComponent<BoxCollider>();
+		this.b.size = new Vector3(2.5f, 2f, (float)this.parent.battleids[1]);
+		this.b.center = new Vector3(0f, 1.5f, (float)(this.parent.battleids[1] / 2));
+		this.b.isTrigger = true;
+		this.s.isTrigger = true;
+		base.gameObject.layer = 2;
+	}
+
+	// Token: 0x06000794 RID: 1940 RVA: 0x0006954D File Offset: 0x0006774D
+	private void LateUpdate()
+	{
+		if (this.cd > 0f)
+		{
+			this.cd -= MainManager.TieFramerate(1f);
+		}
+	}
+
+	// Token: 0x06000795 RID: 1941 RVA: 0x00069574 File Offset: 0x00067774
+	private void OnTriggerStay(Collider other)
+	{
+		if (MainManager.player != null && ((MainManager.player.beemerang != null && other.transform == MainManager.player.beemerang.transform && MainManager.GetSqrDistance(this.parent.transform.position, other.transform.position) < 30f) || (other.transform == MainManager.player.transform && this.cd <= 0f)) && MainManager.FreePlayer())
+		{
+			base.StartCoroutine(this.parent.StealthSpot());
+			this.cd = 3f;
+		}
+	}
+
+	// Token: 0x040007DE RID: 2014
+	public NPCControl parent;
+
+	// Token: 0x040007DF RID: 2015
+	private BoxCollider b;
+
+	// Token: 0x040007E0 RID: 2016
+	private SphereCollider s;
+
+	// Token: 0x040007E1 RID: 2017
+	private float cd;
+}
