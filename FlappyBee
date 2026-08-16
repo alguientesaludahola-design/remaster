@@ -1,0 +1,542 @@
+using System;
+using System.Collections;
+using UnityEngine;
+
+// Token: 0x02000024 RID: 36
+public class FlappyBee : MonoBehaviour
+{
+	// Token: 0x060003B1 RID: 945 RVA: 0x000267EB File Offset: 0x000249EB
+	private void Start()
+	{
+		base.StartCoroutine(this.TitleShow());
+	}
+
+	// Token: 0x060003B2 RID: 946 RVA: 0x000267FA File Offset: 0x000249FA
+	private IEnumerator TitleShow()
+	{
+		MainManager.FadeMusic(0.05f);
+		this.antialias = MainManager.MainCamera.GetComponent<FXAA>().enabled;
+		yield return EventControl.sec;
+		while (MainManager.musiccoroutine != null)
+		{
+			yield return null;
+		}
+		this.textholder = new GameObject().transform;
+		this.textholder.parent = base.transform;
+		this.textholder.localPosition = Vector3.zero;
+		base.StartCoroutine(MainManager.SetText(FlappyBee.args + MainManager.menutext[211], 1, null, false, true, new Vector3(0f, 4f), Vector3.one, Vector3.one * 2f, this.textholder, null));
+		base.StartCoroutine(MainManager.SetText(FlappyBee.args + "|rainbow|" + MainManager.menutext[209], 1, null, false, true, Vector3.zero, Vector3.one, Vector3.one * 1f, this.textholder, null));
+		yield return null;
+		MainManager.ChangeMusic("FlyingBee");
+		MainManager.CheckSamira("FlyingBee");
+		MainManager.MainCamera.GetComponent<FXAA>().enabled = true;
+		MainManager.SetMonitor();
+		MainManager.SetRenderTexture(2);
+		this.sprites = Resources.LoadAll<Sprite>("Sprites/Misc/dungeongame");
+		MainManager.SetCamera(new Vector3(0f, 70f, 3f), Vector3.zero, 1f);
+		this.back = MainManager.NewSpriteObject("back", new Vector3(0.9f, 2.25f), Vector3.zero, base.transform, Resources.Load<Sprite>("Sprites/Misc/game2"), MainManager.spritedefaultunity);
+		this.back.sortingOrder = -10;
+		this.back.transform.localScale = new Vector3(2.5f, 2.5f, 1f);
+		yield return null;
+		MainManager.FadeOut();
+		yield return EventControl.sec;
+		while (!MainManager.GetKey(4))
+		{
+			yield return null;
+		}
+		MainManager.PlaySound("FBPoint");
+		MainManager.FadeIn();
+		yield return EventControl.sec;
+		MainManager.DestroyText(this.textholder);
+		this.back.sprite = this.sprites[25];
+		this.back.transform.localScale = Vector3.one * 200f;
+		this.player.sprite = MainManager.NewSpriteObject("player", new Vector3(-3f, 2.25f), Vector3.zero, base.transform, this.sprites[19], MainManager.spritedefaultunity);
+		this.player.sprite.transform.localScale = Vector3.one * 2f;
+		this.player.sprite.sortingOrder = -5;
+		this.player.rigid = this.player.sprite.gameObject.AddComponent<Rigidbody2D>();
+		this.player.rigid.gravityScale = 0f;
+		this.player.rigid.constraints = (RigidbodyConstraints2D.FreezePositionX | RigidbodyConstraints2D.FreezeRotation);
+		this.player.sprite.gameObject.AddComponent<FlappyBeePlayer>().main = this;
+		BoxCollider2D boxCollider2D = this.player.sprite.gameObject.AddComponent<BoxCollider2D>();
+		boxCollider2D.size = new Vector2(0.3f, 0.2f);
+		boxCollider2D.offset = new Vector2(0f, -0.05f);
+		this.player.rigid.isKinematic = true;
+		this.clouds = new SpriteRenderer[6];
+		for (int i = 0; i < this.clouds.Length; i++)
+		{
+			this.clouds[i] = MainManager.NewSpriteObject("cloud " + i, new Vector3((float)i * 3.5f, Random.Range(2f, 4.5f)), Vector3.zero, base.transform, this.sprites[Random.Range(22, 25)], MainManager.spritedefaultunity);
+			this.clouds[i].transform.localScale = Vector3.one * 2f;
+			this.clouds[i].sortingOrder = -9;
+		}
+		this.walls = new FlappyBee.Walls[3];
+		for (int j = 0; j < this.walls.Length; j++)
+		{
+			this.walls[j].wall = new SpriteRenderer[2];
+			for (int k = 0; k < 2; k++)
+			{
+				this.walls[j].wall[k] = MainManager.NewSpriteObject("wall " + j, new Vector3((float)j, Random.Range(-0.9f, 1.1f)), Vector3.zero, base.transform, this.sprites[21], MainManager.spritedefaultunity);
+				this.walls[j].wall[k].gameObject.AddComponent<BoxCollider2D>().isTrigger = true;
+				this.walls[j].wall[k].transform.localScale = new Vector3(2f, 2.5f, 2f);
+				this.walls[j].wall[k].sortingOrder = -7;
+				if (k == 1)
+				{
+					this.walls[j].wall[1].transform.parent = this.walls[j].wall[0].transform;
+					this.walls[j].wall[1].transform.localPosition = new Vector3(0f, 2.5f);
+				}
+			}
+			if (j > 0)
+			{
+				this.walls[j].wall[0].transform.localPosition = new Vector3(10f, 0f);
+			}
+		}
+		this.ground = new SpriteRenderer[2];
+		for (int l = 0; l < this.ground.Length; l++)
+		{
+			this.ground[l] = MainManager.NewSpriteObject("ground " + l, new Vector3(0f, (l == 0) ? -0.4f : 0.3f), Vector3.zero, base.transform, this.sprites[17 + l], MainManager.spritedefaultunity);
+			this.ground[l].transform.localScale = new Vector3(2f, 2.25f, 2f);
+			this.ground[l].drawMode = SpriteDrawMode.Tiled;
+			this.ground[l].tileMode = SpriteTileMode.Continuous;
+			this.ground[l].size = new Vector2(30f, 0.375f);
+			this.ground[l].sortingOrder = ((l == 0) ? -6 : -8);
+			if (l == 0)
+			{
+				this.ground[l].gameObject.AddComponent<BoxCollider2D>().size = new Vector2(30f, 0.35f);
+				BoxCollider2D boxCollider2D2 = this.ground[l].gameObject.AddComponent<BoxCollider2D>();
+				boxCollider2D2.offset = new Vector2(0f, 2.8f);
+				boxCollider2D2.size = new Vector2(30f, 0.35f);
+			}
+		}
+		this.item = MainManager.NewSpriteObject("item", new Vector3(0f, 999f), Vector3.zero, base.transform, null, MainManager.spritedefaultunity);
+		this.item.enabled = false;
+		this.item.transform.localScale = Vector3.one * 2f;
+		BoxCollider2D boxCollider2D3 = this.item.gameObject.AddComponent<BoxCollider2D>();
+		boxCollider2D3.isTrigger = true;
+		boxCollider2D3.size = new Vector2(0.5f, 0.5f);
+		this.enemy = MainManager.NewSpriteObject("enemy", new Vector3(0f, 999f), Vector3.zero, base.transform, null, MainManager.spritedefaultunity);
+		this.enemy.enabled = false;
+		this.enemy.transform.localScale = Vector3.one * 2f;
+		BoxCollider2D boxCollider2D4 = this.enemy.gameObject.AddComponent<BoxCollider2D>();
+		boxCollider2D4.isTrigger = true;
+		boxCollider2D4.size = new Vector2(0.4f, 0.3f);
+		base.StartCoroutine(this.ReadySet());
+		yield break;
+	}
+
+	// Token: 0x060003B3 RID: 947 RVA: 0x00026809 File Offset: 0x00024A09
+	private IEnumerator ReadySet()
+	{
+		this.clouds[0].sprite = this.sprites[26];
+		this.clouds[0].transform.localPosition = new Vector3(-4f, 4f);
+		this.clouds[0].transform.localScale = Vector3.one * 3f;
+		for (int j = 0; j < this.walls.Length; j++)
+		{
+			this.walls[j].wall[0].transform.localPosition = new Vector3((float)j * 5f + 5f, Random.Range(-0.9f, 1.1f));
+		}
+		yield return null;
+		MainManager.FadeOut();
+		yield return EventControl.sec;
+		int num;
+		for (int i = 0; i < 3; i = num + 1)
+		{
+			MainManager.PlaySound("FBCountdown");
+			base.StartCoroutine(MainManager.SetText(FlappyBee.args + (3 - i), 1, null, false, true, new Vector3(0f, 2f), Vector3.one, Vector3.one * 2f, this.textholder, null));
+			yield return EventControl.halfsec;
+			yield return EventControl.quartersec;
+			MainManager.DestroyText(this.textholder);
+			num = i;
+		}
+		MainManager.PlaySound("FBStart");
+		base.StartCoroutine(MainManager.SetText(FlappyBee.args + MainManager.menutext[214], 1, null, false, true, new Vector3(0f, 2f), Vector3.one, Vector3.one * 2f, this.textholder, null));
+		yield return EventControl.sec;
+		MainManager.DestroyText(this.textholder);
+		this.stext = DynamicFont.SetUp(false, 3f, 1, 0, Vector2.one, this.textholder, new Vector2(-5f, -0.75f));
+		this.stext.tridimentional = true;
+		this.wallid = this.walls.Length - 2;
+		this.cloudid = this.clouds.Length - 2;
+		this.gamestate = 1;
+		this.player.rigid.gravityScale = 1.25f;
+		this.player.rigid.isKinematic = false;
+		yield return null;
+		yield break;
+	}
+
+	// Token: 0x060003B4 RID: 948 RVA: 0x00026818 File Offset: 0x00024A18
+	private void Update()
+	{
+		this.framestep = MainManager.TieFramerate(1f);
+		int num = this.gamestate;
+		if (num != 1)
+		{
+			if (num != 2)
+			{
+				return;
+			}
+			if (MainManager.GetKey(4))
+			{
+				this.back.color = Color.white;
+				MainManager.DestroyText(this.textholder);
+				this.gamestate = 1;
+				this.player.rigid.isKinematic = false;
+				this.player.rigid.gravityScale = 1.25f;
+				this.player.rigid.velocity = this.vel;
+				return;
+			}
+			if (MainManager.GetKey(5))
+			{
+				MainManager.DestroyText(this.textholder);
+				this.gamestate = 3;
+				base.StartCoroutine(this.End());
+			}
+		}
+		else
+		{
+			this.stext.text = MainManager.menutext[189] + " " + this.score.ToString().PadLeft(6, '0');
+			this.speed = Mathf.Lerp(-0.05f, -0.1f, (float)this.progress / 100f);
+			if (this.player.sprite != null)
+			{
+				if (this.invul > 0f)
+				{
+					this.player.sprite.enabled = (Mathf.Sin(Time.time * ((this.invul < 100f) ? 50f : 35f)) > 0f);
+				}
+				else
+				{
+					this.player.sprite.enabled = true;
+				}
+				if (MainManager.GetKey(4))
+				{
+					this.player.rigid.velocity = new Vector2(0f, 4.5f);
+					this.inputcooldown = 5f;
+				}
+				else if (MainManager.GetKey(8))
+				{
+					this.gamestate = 2;
+					this.back.color = Color.gray;
+					this.player.rigid.isKinematic = true;
+					this.player.rigid.gravityScale = 0f;
+					this.vel = this.player.rigid.velocity;
+					this.player.rigid.velocity = Vector2.zero;
+					base.StartCoroutine(MainManager.SetText(FlappyBee.args + MainManager.menutext[213], 1, null, false, true, new Vector3(0f, 3.45f), Vector3.one, Vector3.one, this.textholder, null));
+				}
+				this.player.sprite.sprite = this.sprites[(Mathf.Sin(Time.time * 25f) > 0f) ? 19 : 20];
+			}
+			for (int i = 0; i < this.walls.Length; i++)
+			{
+				this.walls[i].wall[0].transform.localPosition += new Vector3(this.speed * this.framestep, 0f);
+				if (!this.walls[i].passed && this.walls[i].wall[0].transform.localPosition.x <= this.player.sprite.transform.localPosition.x)
+				{
+					this.score += 15;
+					MainManager.PlaySound("FBPoint", -1, 1f, 0.5f);
+					this.progress++;
+					this.walls[i].passed = true;
+				}
+				if (this.walls[i].wall[0].transform.localPosition.x < -7f)
+				{
+					this.wallid++;
+					if (this.wallid >= this.walls.Length)
+					{
+						this.wallid = 0;
+					}
+					this.walls[i].wall[0].transform.localPosition = new Vector3(this.walls[this.wallid].wall[0].transform.localPosition.x + 5f, Random.Range(-0.9f, 1.1f));
+					this.walls[i].wall[1].transform.localPosition = new Vector3(0f, Mathf.Lerp(2.5f, 2.25f, (float)this.progress / 100f));
+					this.walls[i].passed = false;
+					if (!this.item.enabled)
+					{
+						if (this.combo > 7 && this.itemprogress % (this.enemy.enabled ? 5 : 7) == 0 && Random.Range(0, 10) <= (this.enemy.enabled ? 5 : 3))
+						{
+							this.MakeItem(1, this.walls[i].wall[0].transform.localPosition.x + 2.5f);
+						}
+						else
+						{
+							this.MakeItem(0, this.walls[i].wall[0].transform.localPosition.x + 2.5f);
+						}
+						this.itemprogress++;
+					}
+					if (this.combo > 3 && this.progress > 7 && this.progress % ((this.invul > 30f) ? 5 : ((this.progress > 100) ? 15 : 10)) == 0 && !this.enemy.enabled && Random.Range(0, 4) <= ((this.invul > 30f) ? 3 : 2))
+					{
+						this.enemy.transform.localPosition = new Vector3(7f, Random.Range(1.25f, 3.5f));
+						this.enemy.enabled = true;
+						this.passedenemy = false;
+					}
+				}
+			}
+			for (int j = 0; j < this.clouds.Length; j++)
+			{
+				this.clouds[j].transform.localPosition += new Vector3(this.speed * this.framestep * ((j == 0 && !this.hive) ? 1f : 0.35f), 0f);
+				if (this.clouds[j].transform.localPosition.x < -7f)
+				{
+					this.hive = true;
+					this.cloudid++;
+					if (this.cloudid >= this.clouds.Length)
+					{
+						this.cloudid = 0;
+					}
+					this.clouds[j].transform.localPosition = new Vector3(this.clouds[this.cloudid].transform.position.x + 3.5f, Random.Range(1.5f, 4.5f));
+					this.clouds[j].sprite = this.sprites[Random.Range(22, 25)];
+				}
+			}
+			if (this.item.enabled)
+			{
+				this.item.transform.localPosition += new Vector3(this.speed * this.framestep, 0f);
+				this.item.flipX = (Mathf.Sin(Time.time * 15f) > 0f);
+				if (this.item.transform.localPosition.x < -7f)
+				{
+					this.item.enabled = false;
+				}
+				if (this.item.sprite == this.sprites[27] && this.item.transform.localPosition.x < this.player.sprite.transform.localPosition.x - 1f)
+				{
+					this.combo = 0;
+				}
+			}
+			if (this.enemy.enabled)
+			{
+				if (!this.passedenemy && this.enemy.transform.localPosition.x <= this.player.sprite.transform.localPosition.x && MainManager.GetDistance(this.enemy.transform.localPosition.y, this.player.sprite.transform.localPosition.y) < 2f)
+				{
+					MainManager.PlaySound("FBPoint", -1, 1.1f, 0.65f);
+					this.score += 30;
+					this.passedenemy = true;
+				}
+				this.enemy.transform.localPosition += new Vector3(this.speed * this.framestep * 0.75f, 0f);
+				this.enemy.sprite = this.sprites[(Mathf.Sin(Time.time * 45f) > 0f) ? 29 : 30];
+				if (this.enemy.transform.localPosition.x < -7f)
+				{
+					this.enemy.enabled = false;
+				}
+			}
+			for (int k = 0; k < this.ground.Length; k++)
+			{
+				this.ground[k].transform.localPosition += new Vector3(this.speed * this.framestep * ((k == 0) ? 1f : 0.65f), 0f);
+				if (this.ground[k].transform.localPosition.x < -1f)
+				{
+					this.ground[k].transform.localPosition = new Vector3(Mathf.Abs(this.ground[k].transform.localPosition.x), this.ground[k].transform.localPosition.y);
+				}
+			}
+			if (this.inputcooldown > 0f)
+			{
+				this.inputcooldown -= this.framestep;
+			}
+			if (this.invul > 0f)
+			{
+				this.invul -= this.framestep;
+				return;
+			}
+		}
+	}
+
+	// Token: 0x060003B5 RID: 949 RVA: 0x00027274 File Offset: 0x00025474
+	private void MakeItem(int itemtype, float xpos)
+	{
+		this.item.enabled = true;
+		this.item.sprite = this.sprites[27 + itemtype];
+		this.item.transform.localPosition = new Vector3(xpos, Random.Range(1.5f, 4f));
+	}
+
+	// Token: 0x060003B6 RID: 950 RVA: 0x000272C8 File Offset: 0x000254C8
+	private void Combo()
+	{
+		Transform transform = new GameObject().transform;
+		base.StartCoroutine(MainManager.SetText(string.Concat(new object[]
+		{
+			FlappyBee.args,
+			(this.combo >= 5) ? "|rainbow|" : "",
+			"x",
+			this.combo
+		}), 1, null, false, true, this.player.sprite.transform.position, Vector3.one, Vector3.one, transform, null));
+		base.StartCoroutine(MainManager.MoveTowards(transform, Vector3.up, 30f, true, true));
+		Object.Destroy(transform.gameObject, 1f);
+	}
+
+	// Token: 0x060003B7 RID: 951 RVA: 0x00027388 File Offset: 0x00025588
+	public void UseItem()
+	{
+		if (this.gamestate != 3)
+		{
+			if (this.item.sprite == this.sprites[27])
+			{
+				MainManager.PlaySound("FBFlower", -1, Mathf.Clamp(1f + (float)this.combo * 0.05f, 1f, 1.25f), 1f);
+				this.combo++;
+				this.score += 10 * this.combo;
+				this.Combo();
+			}
+			else
+			{
+				this.invul = 300f;
+				MainManager.PlaySound("FBStart");
+			}
+			this.item.transform.localPosition = new Vector3(0f, 999f);
+			this.item.enabled = false;
+		}
+	}
+
+	// Token: 0x060003B8 RID: 952 RVA: 0x0002745C File Offset: 0x0002565C
+	private IEnumerator End()
+	{
+		MainManager.battleresult = true;
+		MainManager.FadeIn();
+		yield return EventControl.sec;
+		if (this.score > MainManager.instance.flagvar[29])
+		{
+			MainManager.instance.flagvar[29] = this.score;
+		}
+		MainManager.EndMiniGame(this.antialias, this.score);
+		yield return null;
+		Object.Destroy(base.gameObject);
+		yield break;
+	}
+
+	// Token: 0x060003B9 RID: 953 RVA: 0x0002746B File Offset: 0x0002566B
+	public IEnumerator Dead(Transform caller)
+	{
+		if (this.gamestate != 3)
+		{
+			SpriteRenderer component = caller.GetComponent<SpriteRenderer>();
+			if (this.invul <= 0f && (component == null || component.enabled))
+			{
+				MainManager.battleresult = false;
+				this.player.rigid.constraints = RigidbodyConstraints2D.None;
+				this.player.rigid.velocity = new Vector2(-5f, 15f);
+				this.player.rigid.AddTorque(-20f);
+				this.gamestate = 3;
+				MainManager.FadeMusic(0.5f);
+				MainManager.PlaySound("FBDeath");
+				yield return EventControl.sec;
+				yield return EventControl.halfsec;
+				MainManager.SetCamera(new Vector3(0f, 90f), Vector3.zero, 1f);
+				this.back.color = Color.black;
+				this.back.transform.localScale = Vector3.one * 1000f;
+				yield return null;
+				MainManager.PlaySound("FBGameOver");
+				base.StartCoroutine(MainManager.SetText(FlappyBee.args + MainManager.menutext[215], 1, null, false, true, new Vector3(0f, 22f), Vector3.one, Vector3.one * 2f, this.textholder, null));
+				while (!MainManager.GetKey(4))
+				{
+					yield return null;
+				}
+				base.StartCoroutine(this.End());
+			}
+			else if (caller == this.enemy.transform)
+			{
+				this.combo++;
+				MainManager.PlaySound("FBStart", -1, 1.1f, 1f);
+				this.score += 10 * this.combo;
+				this.Combo();
+				this.enemy.enabled = false;
+			}
+		}
+		yield break;
+	}
+
+	// Token: 0x0400031A RID: 794
+	private int score;
+
+	// Token: 0x0400031B RID: 795
+	private int longest;
+
+	// Token: 0x0400031C RID: 796
+	private int gamestate;
+
+	// Token: 0x0400031D RID: 797
+	private int wallid;
+
+	// Token: 0x0400031E RID: 798
+	private int cloudid;
+
+	// Token: 0x0400031F RID: 799
+	private int combo;
+
+	// Token: 0x04000320 RID: 800
+	private int progress;
+
+	// Token: 0x04000321 RID: 801
+	private int itemprogress;
+
+	// Token: 0x04000322 RID: 802
+	private DynamicFont stext;
+
+	// Token: 0x04000323 RID: 803
+	private const int maxwalls = 3;
+
+	// Token: 0x04000324 RID: 804
+	private const float scale = 2f;
+
+	// Token: 0x04000325 RID: 805
+	private const float wallopening = 2.5f;
+
+	// Token: 0x04000326 RID: 806
+	private const float walldistance = 5f;
+
+	// Token: 0x04000327 RID: 807
+	private const float clouddistance = 3.5f;
+
+	// Token: 0x04000328 RID: 808
+	private float framestep;
+
+	// Token: 0x04000329 RID: 809
+	private float speed;
+
+	// Token: 0x0400032A RID: 810
+	private float invul;
+
+	// Token: 0x0400032B RID: 811
+	private float inputcooldown;
+
+	// Token: 0x0400032C RID: 812
+	private bool antialias;
+
+	// Token: 0x0400032D RID: 813
+	private bool hive;
+
+	// Token: 0x0400032E RID: 814
+	private bool passedenemy;
+
+	// Token: 0x0400032F RID: 815
+	public static string args = "|center||color,4||dropshadow,0.1,-0.1||textangle|";
+
+	// Token: 0x04000330 RID: 816
+	private Vector2 vel;
+
+	// Token: 0x04000331 RID: 817
+	private Transform textholder;
+
+	// Token: 0x04000332 RID: 818
+	private SpriteRenderer back;
+
+	// Token: 0x04000333 RID: 819
+	private SpriteRenderer enemy;
+
+	// Token: 0x04000334 RID: 820
+	public SpriteRenderer item;
+
+	// Token: 0x04000335 RID: 821
+	private Sprite[] sprites;
+
+	// Token: 0x04000336 RID: 822
+	private FlappyBee.Player player;
+
+	// Token: 0x04000337 RID: 823
+	private FlappyBee.Walls[] walls;
+
+	// Token: 0x04000338 RID: 824
+	private SpriteRenderer[] clouds;
+
+	// Token: 0x04000339 RID: 825
+	private SpriteRenderer[] ground;
+
+	// Token: 0x020001ED RID: 493
+	public struct Player
+	{
+		// Token: 0x04001661 RID: 5729
+		public SpriteRenderer sprite;
+
+		// Token: 0x04001662 RID: 5730
+		public Rigidbody2D rigid;
+	}
+
+	// Token: 0x020001EE RID: 494
+	public struct Walls
+	{
+		// Token: 0x04001663 RID: 5731
+		public SpriteRenderer[] wall;
+
+		// Token: 0x04001664 RID: 5732
+		public bool passed;
+	}
+}
