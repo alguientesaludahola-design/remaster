@@ -1,0 +1,129 @@
+using System;
+using UnityEngine;
+
+// Token: 0x0200005A RID: 90
+public class TempItemDesc : MonoBehaviour
+{
+	// Token: 0x06000797 RID: 1943 RVA: 0x00069630 File Offset: 0x00067830
+	private void Start()
+	{
+		if (this.itemSprite != null && this.itemType == 2 && MainManager.instance.flags[681])
+		{
+			this.itemSprite.sprite = MainManager.guisprites[190];
+			base.enabled = false;
+		}
+	}
+
+	// Token: 0x06000798 RID: 1944 RVA: 0x00069684 File Offset: 0x00067884
+	private void Update()
+	{
+		if (MainManager.map.entities[this.requireEntity] == null)
+		{
+			this.DestroyWindow();
+			base.gameObject.SetActive(false);
+			return;
+		}
+		if (this.insideID == MainManager.instance.insideid && !MainManager.instance.pause)
+		{
+			float num = Vector3.Distance(MainManager.player.entity.transform.position, base.transform.position);
+			if (!(MainManager.map.entities[this.requireEntity] != null) || num >= this.range)
+			{
+				this.DestroyWindow();
+				return;
+			}
+			if (this.itemValue > 0)
+			{
+				MainManager.instance.showmoney = 10f;
+			}
+			if (this.descWindow == null)
+			{
+				this.CreateWindow();
+				return;
+			}
+		}
+		else
+		{
+			this.DestroyWindow();
+		}
+	}
+
+	// Token: 0x06000799 RID: 1945 RVA: 0x0006975F File Offset: 0x0006795F
+	private void OnDestroy()
+	{
+		this.DestroyWindow();
+	}
+
+	// Token: 0x0600079A RID: 1946 RVA: 0x00069767 File Offset: 0x00067967
+	private void DestroyWindow()
+	{
+		if (this.descWindow != null)
+		{
+			this.descWindow.shrink = true;
+			Object.Destroy(this.descWindow, 0.5f);
+			this.descWindow = null;
+		}
+	}
+
+	// Token: 0x0600079B RID: 1947 RVA: 0x0006979C File Offset: 0x0006799C
+	private void CreateWindow()
+	{
+		this.descWindow = MainManager.Create9Box(new Vector3(0f, -4.4f, 10f), new Vector2(11f, 3f), 0, -3, Color.white, true).GetComponent<DialogueAnim>();
+		string text = "|single||singlebreak," + MainManager.itemdescbreak + "|";
+		if (this.itemType == 2)
+		{
+			text += MainManager.badgedata[this.itemID, 0];
+		}
+		else
+		{
+			text += MainManager.itemdata[this.itemType, this.itemID, 0];
+		}
+		text = string.Concat(new string[]
+		{
+			text,
+			" ",
+			(MainManager.languageid == 4) ? "—" : "-",
+			" ",
+			MainManager.menutext[49],
+			"|line|"
+		});
+		if (this.itemType == 2)
+		{
+			MainManager.instance.flagvar[10] = ((this.itemValue > 0) ? this.itemValue : Convert.ToInt32(MainManager.badgedata[this.itemID, 5]));
+			text += MainManager.badgedata[this.itemID, 1];
+		}
+		else
+		{
+			MainManager.instance.flagvar[10] = ((this.itemValue > 0) ? this.itemValue : Convert.ToInt32(MainManager.itemdata[this.itemType, this.itemID, 4]));
+			text += MainManager.itemdata[this.itemType, this.itemID, 2];
+		}
+		if (MainManager.languageid == 3)
+		{
+			text = text.Insert(0, "|sizemulti,1,0.875|");
+		}
+		MainManager.instance.StartCoroutine(MainManager.SetText(text, 0, null, false, false, new Vector3(-5.2f, 0.85f), Vector3.zero, new Vector2(0.675f, 0.675f), this.descWindow.transform, null));
+	}
+
+	// Token: 0x040007E2 RID: 2018
+	public int requireEntity;
+
+	// Token: 0x040007E3 RID: 2019
+	public int insideID = -1;
+
+	// Token: 0x040007E4 RID: 2020
+	public int itemType;
+
+	// Token: 0x040007E5 RID: 2021
+	public int itemID;
+
+	// Token: 0x040007E6 RID: 2022
+	public int itemValue = -1;
+
+	// Token: 0x040007E7 RID: 2023
+	public float range = 3f;
+
+	// Token: 0x040007E8 RID: 2024
+	public SpriteRenderer itemSprite;
+
+	// Token: 0x040007E9 RID: 2025
+	private DialogueAnim descWindow;
+}
