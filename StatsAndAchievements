@@ -1,0 +1,209 @@
+using System;
+using Galaxy.Api;
+using UnityEngine;
+
+// Token: 0x0200002D RID: 45
+public class StatsAndAchievements : MonoBehaviour
+{
+	// Token: 0x060003F5 RID: 1013 RVA: 0x00028C49 File Offset: 0x00026E49
+	private void OnEnable()
+	{
+		this.ListenersInit();
+		this.RequestUserStatsAndAchievements();
+	}
+
+	// Token: 0x060003F6 RID: 1014 RVA: 0x00028C57 File Offset: 0x00026E57
+	private void OnDisable()
+	{
+		this.ListenersDispose();
+	}
+
+	// Token: 0x060003F7 RID: 1015 RVA: 0x00028C5F File Offset: 0x00026E5F
+	public bool Ready()
+	{
+		return this.achievementRetrieveListener.retrieved;
+	}
+
+	// Token: 0x060003F8 RID: 1016 RVA: 0x00028C6C File Offset: 0x00026E6C
+	private void ListenersInit()
+	{
+		if (this.achievementRetrieveListener == null)
+		{
+			this.achievementRetrieveListener = new StatsAndAchievements.UserStatsAndAchievementsRetrieveListener();
+		}
+		if (this.achievementChangeListener == null)
+		{
+			this.achievementChangeListener = new StatsAndAchievements.AchievementChangeListener();
+		}
+		if (this.achievementStoreListener == null)
+		{
+			this.achievementStoreListener = new StatsAndAchievements.StatsAndAchievementsStoreListener();
+		}
+	}
+
+	// Token: 0x060003F9 RID: 1017 RVA: 0x00028CA7 File Offset: 0x00026EA7
+	private void ListenersDispose()
+	{
+		if (this.achievementRetrieveListener != null)
+		{
+			this.achievementRetrieveListener.Dispose();
+		}
+		if (this.achievementChangeListener != null)
+		{
+			this.achievementChangeListener.Dispose();
+		}
+		if (this.achievementStoreListener != null)
+		{
+			this.achievementStoreListener.Dispose();
+		}
+	}
+
+	// Token: 0x060003FA RID: 1018 RVA: 0x00028CE4 File Offset: 0x00026EE4
+	public void RequestUserStatsAndAchievements()
+	{
+		try
+		{
+			GalaxyInstance.Stats().RequestUserStatsAndAchievements();
+		}
+		catch (GalaxyInstance.Error arg)
+		{
+			Debug.LogWarning("Achievements definitions could not be retrived for reason: " + arg);
+		}
+	}
+
+	// Token: 0x060003FB RID: 1019 RVA: 0x00028D20 File Offset: 0x00026F20
+	public void SetAchievement(string apiKey)
+	{
+		try
+		{
+			GalaxyInstance.Stats().SetAchievement(apiKey);
+			GalaxyInstance.Stats().StoreStatsAndAchievements();
+		}
+		catch (GalaxyInstance.Error error)
+		{
+			Debug.LogWarning(string.Concat(new object[]
+			{
+				"Achievement ",
+				apiKey,
+				" could not be unlocked for reason: ",
+				error
+			}));
+		}
+	}
+
+	// Token: 0x060003FC RID: 1020 RVA: 0x00028D80 File Offset: 0x00026F80
+	public bool GetAchievement(string apiKey)
+	{
+		bool result = false;
+		try
+		{
+			uint num = 0U;
+			GalaxyInstance.Stats().GetAchievement(apiKey, ref result, ref num);
+		}
+		catch (GalaxyInstance.Error error)
+		{
+			Debug.LogWarning(string.Concat(new object[]
+			{
+				"Could not get status of achievement ",
+				apiKey,
+				" for reason: ",
+				error
+			}));
+		}
+		return result;
+	}
+
+	// Token: 0x060003FD RID: 1021 RVA: 0x00028DE0 File Offset: 0x00026FE0
+	public string GetAchievementName(string apiKey)
+	{
+		string result = "";
+		try
+		{
+			result = GalaxyInstance.Stats().GetAchievementDisplayName(apiKey);
+		}
+		catch (GalaxyInstance.Error error)
+		{
+			Debug.LogWarning(string.Concat(new object[]
+			{
+				"Could not get name of achievement ",
+				apiKey,
+				" for reason: ",
+				error
+			}));
+		}
+		return result;
+	}
+
+	// Token: 0x060003FE RID: 1022 RVA: 0x00028E40 File Offset: 0x00027040
+	public void ResetStatsAndAchievements()
+	{
+		try
+		{
+			GalaxyInstance.Stats().ResetStatsAndAchievements();
+		}
+		catch (GalaxyInstance.Error arg)
+		{
+			Debug.LogWarning("Could not get reset user stats and achievements for reason: " + arg);
+		}
+	}
+
+	// Token: 0x04000388 RID: 904
+	private StatsAndAchievements.UserStatsAndAchievementsRetrieveListener achievementRetrieveListener;
+
+	// Token: 0x04000389 RID: 905
+	private StatsAndAchievements.AchievementChangeListener achievementChangeListener;
+
+	// Token: 0x0400038A RID: 906
+	private StatsAndAchievements.StatsAndAchievementsStoreListener achievementStoreListener;
+
+	// Token: 0x020001F5 RID: 501
+	private class UserStatsAndAchievementsRetrieveListener : GlobalUserStatsAndAchievementsRetrieveListener
+	{
+		// Token: 0x06001075 RID: 4213 RVA: 0x0018416D File Offset: 0x0018236D
+		public override void OnUserStatsAndAchievementsRetrieveSuccess(GalaxyID userID)
+		{
+			this.retrieved = true;
+		}
+
+		// Token: 0x06001076 RID: 4214 RVA: 0x00184176 File Offset: 0x00182376
+		public override void OnUserStatsAndAchievementsRetrieveFailure(GalaxyID userID, IUserStatsAndAchievementsRetrieveListener.FailureReason failureReason)
+		{
+			this.retrieved = false;
+			Debug.LogWarning(string.Concat(new object[]
+			{
+				"User ",
+				userID,
+				" stats and achievements could not be retrieved, for reason ",
+				failureReason
+			}));
+		}
+
+		// Token: 0x04001678 RID: 5752
+		public bool retrieved;
+	}
+
+	// Token: 0x020001F6 RID: 502
+	private class StatsAndAchievementsStoreListener : GlobalStatsAndAchievementsStoreListener
+	{
+		// Token: 0x06001078 RID: 4216 RVA: 0x001841B4 File Offset: 0x001823B4
+		public override void OnUserStatsAndAchievementsStoreFailure(IStatsAndAchievementsStoreListener.FailureReason failureReason)
+		{
+			Debug.LogWarning("OnUserStatsAndAchievementsStoreFailure: " + failureReason);
+		}
+
+		// Token: 0x06001079 RID: 4217 RVA: 0x0000448F File Offset: 0x0000268F
+		public override void OnUserStatsAndAchievementsStoreSuccess()
+		{
+		}
+	}
+
+	// Token: 0x020001F7 RID: 503
+	private class AchievementChangeListener : GlobalAchievementChangeListener
+	{
+		// Token: 0x0600107B RID: 4219 RVA: 0x0000448F File Offset: 0x0000268F
+		public override void OnAchievementUnlocked(string name)
+		{
+		}
+	}
+}
+S
